@@ -68,11 +68,8 @@ func (p *pid) unstashAll() error {
 	p.stashSemaphore.Lock()
 	defer p.stashSemaphore.Unlock()
 
-	// send all the messages in the stash buffer to the mailbox
-	for !p.stashBuffer.IsEmpty() {
-		// grab the message from the stash buffer. Ignore the error when the mailbox is empty
-		received, _ := p.stashBuffer.Pop()
-		// send it to the mailbox for processing
+	for received := range p.stashBuffer.Buffer() {
+		// send it to the mailbox processing
 		p.doReceive(received)
 	}
 

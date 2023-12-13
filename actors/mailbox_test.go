@@ -26,6 +26,7 @@ package actors
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -66,6 +67,24 @@ func TestMailbox(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, popped)
 		assert.EqualValues(t, 3, mailbox.Size())
+	})
+
+	t.Run("With happy path blocking pop", func(t *testing.T) {
+		mailbox := newReceiveContextBuffer(10)
+		assert.True(t, mailbox.IsEmpty())
+
+		go func() {
+			<-mailbox.Buffer()
+		}()
+
+		assert.NoError(t, mailbox.Push(new(receiveContext)))
+		assert.NoError(t, mailbox.Push(new(receiveContext)))
+		assert.NoError(t, mailbox.Push(new(receiveContext)))
+		assert.NoError(t, mailbox.Push(new(receiveContext)))
+
+		assert.Eventually(t, func() bool {
+			return mailbox.Size() == 3
+		}, time.Second, 100*time.Millisecond)
 	})
 
 	t.Run("With Clone", func(t *testing.T) {
